@@ -448,9 +448,8 @@ class RootWindow(tk.Tk):
         # Populate tab1
         t1_frm1 = ttk.Frame(tab1)
         t1_frm2 = ttk.Frame(tab1)
-        t1_label1 = ttk.Label(t1_frm1,text="Welcome to the Webkit Bug Finder. This program will parse a WebKit SVN changelog and find all bugs that are restricted from public view.\nIt stores the changelog information for each bug into a database so that the program can show you each bug and its associated committ. ").pack(side='left',padx=5,pady=10)
-        
-        self.btn_test=ttk.Button(t1_frm1,text="Auto obtain").pack()
+        t1_label1 = ttk.Label(t1_frm1,text="Welcome to the Webkit Bug Finder. This program will parse a WebKit SVN changelog and find all bugs that are restricted from public view.\nIt stores the changelog information for each bug into a database so that the program can show you each bug and its associated committ.").pack(side='left',padx=5,pady=10)
+
         t1_frm1.grid(column=1,row=1,padx=10,sticky='w')
         # Populate tab2
         frm1 = ttk.Frame(tab2)
