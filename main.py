@@ -439,19 +439,34 @@ class RootWindow(tk.Tk):
         tab2 = ttk.Frame(n)
         tab3 = ttk.Frame(n)
         tab4 = ttk.Frame(n)
-        n.add(tab1,text="Pre-requisites")
+        n.add(tab1,text="Welcome1")
         n.add(tab2,text="Parser")
         n.add(tab3,text="Results")
         n.add(tab4,text="Hosting")
         n.pack(fill="both", expand=True)
 
         # Populate tab1
-        t1_frm1 = ttk.Frame(tab1)
+        t1_frm1 = ttk.Frame(tab1)   
         t1_frm2 = ttk.Frame(tab1)
-        t1_label1 = ttk.Label(t1_frm1,text="Welcome to the Webkit Bug Finder. This program will parse a WebKit SVN changelog and find all bugs that are restricted from public view.\nIt stores the changelog information for each bug into a database so that the program can show you each bug and its associated committ. ").pack(side='left',padx=5,pady=10)
+        t1_label1 = ttk.Label(t1_frm1,text="Welcome to the Webkit Bug Finder. This program will parse a WebKit SVN changelog and find all bugs that are\n\
+restricted from public view. It stores the changelog information for each bug into a database so that the\n\
+program can show you each bug and its associated committ log. Most of these will contain details about\n\
+what triggers the bug. Many will also contain layout test paths to trigger the bug. These layout tests are\n\
+contained in your updated local WebKit repo and can be hosted by this program using the hosting tab above.\n\
+Once hosted, you can navigate your WebKit based browser to your_IP_address:8000 to see if the browser is\n\
+affected by the bug. This is how it works:\n\n\
+\n1: Update your local copy of WebKit repo by running Tools"+dir_slash+"Scripts"+dir_slash+"update-webkit\n\n\
+2: You will need to have Subversion installed and obtain a svn changelog by navigating\n\
+    to the root of your WebKit directory and running: svn log > any_filename.txt\n\n\
+3: Once you have the svn changelog, you can parse and scan it following the instructions\n\
+    in the parser tab. If this is the first time running the program, a new database will be\n\
+    generated. If you already have a database, it will be updated each time you repeat this\n\
+    process. Once a scan has completed it can take a while to write the results to the database.\n\
+    You will see a 'Done' message in the terminal window when it has completed. ").pack(side='left',padx=5,pady=10)
         
-        self.btn_test=ttk.Button(t1_frm1,text="Auto obtain").pack()
+        self.updt_wbkt_btn=ttk.Button(t1_frm2,text="Update WebKit",command=self.updt_wbkt_clicked).pack()
         t1_frm1.grid(column=1,row=1,padx=10,sticky='w')
+        t1_frm2.grid(column=1,row=2,padx=10,sticky='sw')
         # Populate tab2
         frm1 = ttk.Frame(tab2)
         frm2 = ttk.Frame(tab2)
@@ -465,7 +480,7 @@ class RootWindow(tk.Tk):
         self.log_file_path = ttk.Entry(frm2, width=35)
         self.log_file_path.pack(side='left',padx=5,pady=10)
         self.browse_btn = ttk.Button(frm2,text="Browse..",command=self.browse_clicked).pack(side='left',padx=5,pady=10)
-        self.label3 = ttk.Label(frm3,text="Once you've provided a valid path above, click on the Parse log button. This will parse the log file\ninto seperate commit entries and generate a database file to work with. This will take a few seconds.\nTo stop parsing when a specific date is reached, adjust the stop date accordingly. YYYY-MM-DD").pack(side='left',padx=5,pady=10)
+        self.label3 = ttk.Label(frm3,text="Once you've provided a valid path above, click on the Parse log button. This will parse the log file\ninto seperate commit entries and generate a database file to work with. This will take a few seconds.\nTo stop parsing when a specific date is reached, adjust the stop date accordingly. YYYY-MM-DD\nIf you are updating an existing database, the parser will automatically stop when it reaches the last\nknown commit found in the database OR when the stop date you provide is reached. Whichever\nhappens first.").pack(side='left',padx=5,pady=10)
         self.parse_btn = ttk.Button(frm4,text="Parse log",width=20,command=self.parse_clicked)
         self.parse_btn.pack(side='left',padx=5,pady=10)
         self.label7 = ttk.Label(frm4,text="Stop date:").pack(side='left',padx=20,pady=10)
@@ -552,6 +567,16 @@ class RootWindow(tk.Tk):
         frm16.grid(column=1,row=7,padx=10,sticky='w')
 
     # Behavior for button clicks in all tabs of root window.
+    def updt_wbkt_clicked(self):
+        print('not working yet')
+        users_home = os.path.expanduser('~')
+        wk = users_home+dir_slash+'WebKit'
+        print(users_home)
+        if os.path.isdir(wk):
+            print('webkit directory exists at: '+wk)
+        else:
+            print('webkit was not present at: '+wk)
+        
     def browse_clicked(self):
         log_path = filedialog.askopenfilename()
         self.log_file_path.delete('0',tk.END)
