@@ -1,1 +1,3 @@
 # Restricted-Webkit-Bug-Finder
+
+Will parse a WebKit svn changelog and create/update a database with individual commits. The database is then querried and all bug urls are scanned to find the ones that are restricted from public view, these ones get marked in the database as restricted. This program will present ONLY the restricted bugs in a nice gui listview. It also allows for easy testing of the bugs that have layout tests available by copy/pasting the layout test path right into the hosting tab of the program. Click host and then navigate the WebKit device to "your_local_ip:8000" and the layout test is triggered. If the browser crashes, behaves funny, or fails the test it may be worth looking into.

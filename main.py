@@ -7,6 +7,7 @@ import psutil
 import socket
 import random
 import struct
+from datetime import datetime
 try:
     from BeautifulSoup import BeautifulSoup
 except ImportError:
@@ -21,7 +22,7 @@ import tempfile
 import subprocess
 import time
 import math
-import datetime
+#import datetime
 import multiprocessing
 # I was going to make this python2.7 and python3 compatible
 # but I havent implemented it fully. I believe I would only need to
@@ -45,7 +46,7 @@ except ImportError:
     from ScrolledText import ScrolledText
 
 db_name = 'commits.db'# Hardcoded database name
-original_directory = os.getcwd()
+original_directory = os.getcwd() # Original working directory
 if os.name == 'nt':
     dir_slash = "\\"
 else:
@@ -100,6 +101,7 @@ class LogParser():
             cursor.execute("SELECT revision FROM logs")
             results = cursor.fetchall()
             stop_rvn = max(results)[0] # Highest rvn in the database. When updating existing db, stop parsing when this is reached.
+            print(stop_rvn)
             db.close()
             print('Existing database was found and will be updated.')
         else:
@@ -176,7 +178,7 @@ class LogParser():
         db.commit()
         db.close()      
 
-hit = re.compile('\"bug_title\"\>Access Denied')
+hit = re.compile('\"bug_title\"\>Bug Access Denied')
 
 
 #########################################################################################
@@ -329,6 +331,7 @@ class HTMLScraper(BeautifulSoup,threading.Thread):
                 try:
                     
                     for netconn in psutil.net_connections():
+                        #print 'starting debug'
                         if netconn.fd == -1 and netconn.family == 2                 \
                         and netconn.status == "TIME_WAIT"                           \
                         and netconn.laddr[0] == "127.0.0.1"                         \
@@ -341,6 +344,7 @@ class HTMLScraper(BeautifulSoup,threading.Thread):
                         if pid > 0:
                             pass
                 except Exception as e:
+                    print 'here is the error'
                     print e.args
                 self.connections = []
                                     
@@ -427,6 +431,7 @@ class HTMLScraper(BeautifulSoup,threading.Thread):
 class RootWindow(tk.Tk):
     newthread=False
     scan_running=False
+    automate_running=False
     commit_track_list = []
     def __init__(self,*args,**kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
@@ -434,20 +439,24 @@ class RootWindow(tk.Tk):
 
     def build_window(self):
         # Build the Notebook widget
-        n = ttk.Notebook(self)
-        tab1 = ttk.Frame(n)
-        tab2 = ttk.Frame(n)
-        tab3 = ttk.Frame(n)
-        tab4 = ttk.Frame(n)
-        n.add(tab1,text="Welcome1")
-        n.add(tab2,text="Parser")
-        n.add(tab3,text="Results")
-        n.add(tab4,text="Hosting")
-        n.pack(fill="both", expand=True)
+        self.notebook = ttk.Notebook(self)
+        tab1 = ttk.Frame(self.notebook)
+        tab2 = ttk.Frame(self.notebook)
+        tab3 = ttk.Frame(self.notebook)
+        self.results_tab = tab3
+        tab4 = ttk.Frame(self.notebook)
+        self.notebook.add(tab1,text="Welcome1")
+        self.notebook.add(tab2,text="Parser")
+        self.notebook.add(tab3,text="Results")
+        self.notebook.add(tab4,text="Hosting")
+        self.notebook.pack(fill="both", expand=True)
 
         # Populate tab1
         t1_frm1 = ttk.Frame(tab1)   
         t1_frm2 = ttk.Frame(tab1)
+        t1_frm3 = ttk.Frame(tab1)
+        t1_frm4 = ttk.Frame(tab1)
+        t1_frm5 = ttk.Frame(tab1)
         t1_label1 = ttk.Label(t1_frm1,text="Welcome to the Webkit Bug Finder. This program will parse a WebKit SVN changelog and find all bugs that are\n\
 restricted from public view. It stores the changelog information for each bug into a database so that the\n\
 program can show you each bug and its associated committ log. Most of these will contain details about\n\
@@ -464,9 +473,16 @@ affected by the bug. This is how it works:\n\n\
     process. Once a scan has completed it can take a while to write the results to the database.\n\
     You will see a 'Done' message in the terminal window when it has completed. ").pack(side='left',padx=5,pady=10)
         
-        self.updt_wbkt_btn=ttk.Button(t1_frm2,text="Update WebKit",command=self.updt_wbkt_clicked).pack()
-        t1_frm1.grid(column=1,row=1,padx=10,sticky='w')
-        t1_frm2.grid(column=1,row=2,padx=10,sticky='sw')
+        t1_label2 = ttk.Label(t1_frm2,text="If you are running linux, have Subversion installed and have WebKit installed @ usershome/WebKit/\nthen the following 3 buttons will work. Automate will try to automate the entire process.\nThat is, update webkit, get a WebKit svn log, parse said log, scan for restricted bugs and switch\nyou to the results views. Throttle and Stop Date values will be obtained from the Parser tab. Change the values there prior to\nproceeding with the automation. This could take a while...").pack(side='left',padx=5,pady=10)
+         
+        self.updt_wbkt_btn=ttk.Button(t1_frm3,text="Update WebKit",width=12,command=self.updt_wbkt_clicked).pack()
+        self.get_svnlog_btn=ttk.Button(t1_frm4,text="Get Svn Log",width=12,command=self.get_svnlog_clicked).pack()
+        self.automate_btn=ttk.Button(t1_frm5,text="Automate",width=12,command=self.automate).pack() 
+        t1_frm1.grid(column=1,row=1,padx=10,pady=15,sticky='w')
+        t1_frm2.grid(column=1,row=2,padx=10,pady=5,sticky='w')
+        t1_frm3.grid(column=1,row=3,padx=10,pady=5,sticky='w')
+        t1_frm4.grid(column=1,row=4,padx=10,pady=15,sticky='w') 
+        t1_frm5.grid(column=1,row=5,padx=10,pady=15,sticky='w')
         # Populate tab2
         frm1 = ttk.Frame(tab2)
         frm2 = ttk.Frame(tab2)
@@ -568,14 +584,68 @@ affected by the bug. This is how it works:\n\n\
 
     # Behavior for button clicks in all tabs of root window.
     def updt_wbkt_clicked(self):
-        print('not working yet')
         users_home = os.path.expanduser('~')
         wk = users_home+dir_slash+'WebKit'
-        print(users_home)
         if os.path.isdir(wk):
             print('webkit directory exists at: '+wk)
+            command = wk+dir_slash+'Tools'+dir_slash+'Scripts'+dir_slash+'./update-webkit'
+            p = subprocess.Popen(command, shell=True)
+            out,err = p.communicate()
+            #print(out)
         else:
             print('webkit was not present at: '+wk)
+        
+        
+        #p.wait()
+        #output = p.stdout.read()
+        #p.stdout.close()
+
+    def get_svnlog_clicked(self):
+        cur=os.getcwd()
+        users_home = os.path.expanduser('~')
+        wk = users_home+dir_slash+'WebKit'
+        #print(users_home)
+        if os.path.isdir(wk):
+            print('webkit directory exists at: '+wk)
+            if os.path.isfile('commits.db'):
+                today = datetime.now()
+                today = str(today.month)+'-'+str(today.day)+'-'+str(today.year) 
+                db = sqlite3.connect('commits.db')
+                cursor = db.cursor()
+                cursor.execute("SELECT revision FROM logs")
+                results = cursor.fetchall()
+                max_rvn = max(results)[0].split('r')[1]
+                log_name = 'webkitlog-'+today+'.txt'
+                command = 'svn log -r BASE:'+max_rvn+' > '+log_name
+                #print(command)
+                #print(max_rvn)
+                db.close()
+                os.chdir(wk)
+                p = subprocess.Popen(command, shell=True)
+                out,err = p.communicate()
+                #print(out)
+                os.chdir(original_directory)
+                log_pth = wk + dir_slash + log_name
+                return log_pth
+            
+        else:
+            print('webkit was not present at: '+wk)
+        
+    def automate(self):
+        print('\n\nNow running full automation, please be patient....')
+        self.automate_running=True
+        print('\n\nUpdating WebKit.....\n\n') 
+	self.updt_wbkt_clicked()
+        print('\n\nObtaining WebKit svn changelog.....\n\n')   
+        log_path = self.get_svnlog_clicked()
+        print('\n\nParsing log.....\n\n')
+	self.parse_clicked(log_path)
+        print('Running scan.....\n\n')
+        self.scan_clicked()
+        print('Switching to Results tab.....')
+        self.notebook.select(self.results_tab)
+
+        self.automate_running=False                  
         
     def browse_clicked(self):
         log_path = filedialog.askopenfilename()
@@ -626,19 +696,25 @@ affected by the bug. This is how it works:\n\n\
             
          
 
-    def parse_clicked(self):
-        try:
-            log_path = open(self.log_file_path.get())
-        except Exception as e:
-            print(e)
-            log_path=None
+    def parse_clicked(self, *args):
+        if (len(args) > 0):
+	    log_path = open(args[0])
+            #print(args)
+		
+        else: 
+            try:
+               log_path = open(self.log_file_path.get())
+            except Exception as e:
+               print(e)
+               log_path=None
         if log_path != None:
             try:
                 stop_date = self.stop_year_box.get()+'-'+self.stop_month_box.get()+'-'+self.stop_date_box.get()             
                 self.parsed_log = LogParser(log_path,stop_date)
                 self.commit_list = self.parsed_log.commit_list
                 self.entry_count = self.parsed_log.entry_count
-                message.showinfo('Complete','Operation is complete')
+                if not self.automate_running:
+                    message.showinfo('Complete','Operation is complete')
             except Exception as e:
                 print(e)
                 message.showerror('Error','Something went wrong parsing the log.')
