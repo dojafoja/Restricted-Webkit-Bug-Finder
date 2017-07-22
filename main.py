@@ -445,7 +445,7 @@ class RootWindow(tk.Tk):
         tab3 = ttk.Frame(self.notebook)
         self.results_tab = tab3
         tab4 = ttk.Frame(self.notebook)
-        self.notebook.add(tab1,text="Welcome1")
+        self.notebook.add(tab1,text="Welcome")
         self.notebook.add(tab2,text="Parser")
         self.notebook.add(tab3,text="Results")
         self.notebook.add(tab4,text="Hosting")
